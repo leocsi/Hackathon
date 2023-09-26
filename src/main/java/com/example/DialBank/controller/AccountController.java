@@ -55,12 +55,12 @@ public class AccountController {
 
     @DeleteMapping("account/delete/{id}")
     ResponseEntity<String> deleteAccount(@PathVariable Long id){
-        //return new Account();
         try {
             accountService.deleteAccount(id);
             return ResponseEntity.ok("Account #" + id + " deleted successfully.");
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body("Error: Account #" + id + " could not be deleted.");
+            //return ResponseEntity.badRequest().body("Error: Account #" + id + " could not be deleted.");
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ExceptionJSON(ex.getMessage()).json());
         }
 
     }
