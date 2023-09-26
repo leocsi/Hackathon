@@ -7,10 +7,7 @@ import com.example.DialBank.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-<<<<<<< Updated upstream
 import org.springframework.http.MediaType;
-=======
->>>>>>> Stashed changes
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,7 +47,6 @@ public class AccountController {
         }
     }
 
-    //Ciaran
     @DeleteMapping("account/delete/{id}")
     ResponseEntity<String> deleteAccount(@PathVariable Long id){
         //return new Account();
