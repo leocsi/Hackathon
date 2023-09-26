@@ -1,18 +1,24 @@
 package com.example.DialBank.controller;
 
 import com.example.DialBank.exceptions.AccountNotFoundException;
+
+import com.example.DialBank.exceptions.InsufficientFundsException;
+
 import com.example.DialBank.model.Account;
 import com.example.DialBank.model.ExceptionJSON;
 import com.example.DialBank.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
-import javax.print.attribute.standard.Media;
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequestMapping("api/")
@@ -49,29 +55,45 @@ public class AccountController {
 
     @DeleteMapping("account/delete/{id}")
     ResponseEntity<String> deleteAccount(@PathVariable Long id){
-        //return new Account();
         try {
             accountService.deleteAccount(id);
             return ResponseEntity.ok("Account #" + id + " deleted successfully.");
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body("Error: Account #" + id + " could not be deleted.");
+            //return ResponseEntity.badRequest().body("Error: Account #" + id + " could not be deleted.");
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ExceptionJSON(ex.getMessage()).json());
         }
 
     }
 
     @PutMapping("account/")
-    Account changeAccount(@RequestBody Account account){
-        return new Account();
+    Account changeAccount(@PathVariable Long id, @RequestBody Account account){
+        try {
+            return accountService.updateAccount(id, account);
+        } catch (AccountNotFoundException e) {
+            throw new ResponseStatusException(NOT_FOUND, e.getMessage());
+        }
     }
 
-    @PutMapping("account/deposit/{id}-{amount}")
-    Account depositMoney(@PathVariable Long id, @PathVariable Float amount){
-        return new Account();
+    @PutMapping(value = "account/deposit/{id}-{amount}", produces= MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<String> depositMoney(@PathVariable Long id, @PathVariable Float amount){
+        try {
+            accountService.depositToAccount(id, amount);
+            return ResponseEntity.status(HttpStatus.OK).body("Money has been deposited");
+        } catch (AccountNotFoundException e) {
+            throw new ResponseStatusException(NOT_FOUND, e.getMessage());
+        }
     }
 
-    @PutMapping("account/withdraw/{id}-{amount}")
-    Account withdrawMoney(@PathVariable Long id, @PathVariable Float amount){
-        return new Account();
+    @PutMapping(value = "account/withdraw/{id}-{amount}", produces= MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<String> withdrawMoney(@PathVariable Long id, @PathVariable Float amount){
+        try {
+            accountService.withdrawFromAccount(id, amount);
+            return ResponseEntity.status(HttpStatus.OK).body("Money has been withdrawn");
+        } catch (InsufficientFundsException e) {
+            return ResponseEntity.status(BAD_REQUEST).body("Insufficient funds");
+        } catch (AccountNotFoundException e) {
+            throw new ResponseStatusException(NOT_FOUND, e.getMessage());
+        }
     }
 }
 
