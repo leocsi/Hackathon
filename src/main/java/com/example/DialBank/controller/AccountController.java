@@ -1,12 +1,16 @@
 package com.example.DialBank.controller;
 
+import com.example.DialBank.exceptions.AccountNotFoundException;
 import com.example.DialBank.model.Account;
 import com.example.DialBank.model.ExceptionJSON;
 import com.example.DialBank.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+<<<<<<< Updated upstream
 import org.springframework.http.MediaType;
+=======
+>>>>>>> Stashed changes
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +40,7 @@ public class AccountController {
         }
     }
 
+<<<<<<< Updated upstream
     @PostMapping(value="/account/add", produces= MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<String> createAccount(@RequestBody Account account){
         try {
@@ -43,12 +48,31 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdAccount.json()); //Code here
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ExceptionJSON(e.getMessage()).json());
+=======
+    //Ciaran
+    @PostMapping("/account/add")
+    ResponseEntity<String> createAccount(@RequestBody Account account){
+        //return new Account();
+        try {
+            accountService.addNewAccount(account);
+            return ResponseEntity.ok("Account #" + account.getUser_id() + "  created!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: Account #" + account.getUser_id() + " could not be created.");
+>>>>>>> Stashed changes
         }
     }
 
+    //Ciaran
     @DeleteMapping("account/delete/{id}")
-    Account deleteAccount(@PathVariable Long id){
-        return new Account();
+    ResponseEntity<String> deleteAccount(@PathVariable Long id){
+        //return new Account();
+        try {
+            accountService.deleteAccount(id);
+            return ResponseEntity.ok("Account #" + id + " deleted successfully.");
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body("Error: Account #" + id + " could not be deleted.");
+        }
+
     }
 
     @PutMapping("account/")

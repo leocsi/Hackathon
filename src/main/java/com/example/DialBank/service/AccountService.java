@@ -1,5 +1,6 @@
 package com.example.DialBank.service;
 
+import com.example.DialBank.exceptions.AccountAlreadyExistsException;
 import com.example.DialBank.model.Account;
 import com.example.DialBank.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +25,17 @@ public class AccountService {
         );
     }
 
+    //Ciaran
     public Account addNewAccount(Account account){
+        if (accountRepository.existsById(account.getUser_id())){
+            throw new AccountAlreadyExistsException("This account already exists!");
+        }
         return accountRepository.save(account);
     }
 
-    public Long deleteAccount(Long id){
+    //Ciaran
+    public Long deleteAccount(Long id) throws AccountNotFoundException {
+        accountRepository.findById(id).orElseThrow(()-> new AccountNotFoundException("Could not find an account #" + id + ". Try a valid ID."));
         accountRepository.deleteById(id);
         return id;
     }
