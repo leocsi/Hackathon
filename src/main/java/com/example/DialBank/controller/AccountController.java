@@ -40,7 +40,6 @@ public class AccountController {
         }
     }
 
-<<<<<<< Updated upstream
     @PostMapping(value="/account/add", produces= MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<String> createAccount(@RequestBody Account account){
         try {
@@ -48,17 +47,6 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdAccount.json()); //Code here
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ExceptionJSON(e.getMessage()).json());
-=======
-    //Ciaran
-    @PostMapping("/account/add")
-    ResponseEntity<String> createAccount(@RequestBody Account account){
-        //return new Account();
-        try {
-            accountService.addNewAccount(account);
-            return ResponseEntity.ok("Account #" + account.getUser_id() + "  created!");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: Account #" + account.getUser_id() + " could not be created.");
->>>>>>> Stashed changes
         }
     }
 
