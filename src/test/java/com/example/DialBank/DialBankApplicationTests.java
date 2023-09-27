@@ -34,96 +34,68 @@ class DialBankApplicationTests {
     @Autowired
     private AccountRepository accountRepository;
 
-    @Test
-    void contextLoads() {
-    }
+
+	@Test
+	@DirtiesContext
+	public void testDeposit_success() throws Exception {
+
+		//Testing data
+		Long testId = 99999L;
+		String first_name = "X";
+		String last_name = "Y";
+		Float balance = 100000000f;
+		String phone_number = "1234567";
+		Float amount = 11111111f;
+
+		String JSON = addAccount(new Account(testId,first_name,last_name,balance,phone_number));
+		Account testAccount = objectMapper.readValue(JSON, Account.class);
+		Long id = testAccount.getUser_id();
+		Float balanceBefore = testAccount.getBalance();
+
+		this.mockMvc.perform(put(ACCOUNT_ENDPOINT_URL + "/account/deposit/" + id + "-" + amount))
+				.andDo(print())
+				.andExpect(status().is2xxSuccessful());
+
+		String JSONAfter = getAccountById(id);
+
+		Account accountAfter = objectMapper.readValue(JSONAfter, Account.class);
+		deleteAccount(id);
+
+		Float balanceAfter = accountAfter.getBalance();
+		assertEquals(balanceBefore + amount, balanceAfter);
+	}
+
+	@Test
+	@DirtiesContext
+	public void testWithdraw_success() throws Exception {
+
+		Long testId = 99999L;
+		String first_name = "X";
+		String last_name = "Y";
+		Float balance = 100000000f;
+		String phone_number = "1234567";
+		Float amount = 11111f;
 
 
-    @Test
-    @DirtiesContext
-    public void testDeposit_success() throws Exception {
 
-        long testId = 1;
-        Float amount = 11111111f;
+		String JSON = addAccount(new Account(testId,first_name,last_name,balance,phone_number));
+		Account testAccount = objectMapper.readValue(JSON, Account.class);
+		Long id = testAccount.getUser_id();
+		Float balanceBefore = testAccount.getBalance();
 
-        String JSON = this.mockMvc.perform(get(ACCOUNT_ENDPOINT_URL + "/account/" + testId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+		this.mockMvc.perform(put(ACCOUNT_ENDPOINT_URL + "/account/withdraw/" + id + "-" + amount))
+				.andDo(print())
+				.andExpect(status().is2xxSuccessful());
 
-        Account accountBefore = objectMapper.readValue(JSON, Account.class);
-        Float balanceBefore = accountBefore.getBalance();
+		String JSONAfter = getAccountById(id);
 
+		Account accountAfter = objectMapper.readValue(JSONAfter, Account.class);
+		deleteAccount(id);
 
-        this.mockMvc.perform(put(ACCOUNT_ENDPOINT_URL + "/account/deposit/" + testId + "-" + amount))
-                .andDo(print())
-                .andExpect(status().isOk());
+		Float balanceAfter = accountAfter.getBalance();
+		assertEquals(balanceBefore - amount, balanceAfter);
+	}
 
-        String JSONAfter = this.mockMvc.perform(get(ACCOUNT_ENDPOINT_URL + "/account/" + testId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        this.mockMvc.perform(put(ACCOUNT_ENDPOINT_URL + "/account/deposit/" + testId + "-" + balanceBefore))
-                .andDo(print())
-                .andExpect(status().isOk());
-
-        Account accountAfter = objectMapper.readValue(JSONAfter, Account.class);
-        Float balanceAfter = accountAfter.getBalance();
-        assertEquals(balanceBefore + amount, balanceAfter);
-    }
-
-    @Test
-    @DirtiesContext
-    public void testWithdraw_success() throws Exception {
-
-        long testId = 1;
-        Float amount = 1f;
-
-        String JSON = this.mockMvc.perform(get(ACCOUNT_ENDPOINT_URL + "/account/" + testId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        Account accountBefore = objectMapper.readValue(JSON, Account.class);
-        Float balanceBefore = accountBefore.getBalance();
-
-
-        this.mockMvc.perform(put(ACCOUNT_ENDPOINT_URL + "/account/withdraw/" + testId + "-" + amount))
-                .andDo(print())
-                .andExpect(status().isOk());
-
-        String JSONAfter = this.mockMvc.perform(get(ACCOUNT_ENDPOINT_URL + "/account/" + testId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        this.mockMvc.perform(put(ACCOUNT_ENDPOINT_URL + "/account/deposit/" + testId + "-" + balanceBefore))
-                .andDo(print())
-                .andExpect(status().isOk());
-
-        Account accountAfter = objectMapper.readValue(JSONAfter, Account.class);
-        Float balanceAfter = accountAfter.getBalance();
-        assertEquals(balanceBefore - amount, balanceAfter);
-    }
-
-
-    private Float getAccountById() throws Exception {
-        String JSON = mockMvc.perform(get(ACCOUNT_ENDPOINT_URL + "/account/{id}"))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        return objectMapper.readValue(JSON, new TypeReference<>() {
-        });
-    }
 
     @Test
     @DirtiesContext
@@ -181,13 +153,14 @@ class DialBankApplicationTests {
         this.mockMvc.perform(delete(ACCOUNT_ENDPOINT_URL + "/account/delete/" + id+1)
                         .header("Content-Type", "application/json"))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().is4xxClientError())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         List<Account> afterDelete = getAllAccounts();
         assertEquals(afterDelete.size(), beforeDelete.size());
+		deleteAccount(id);
     }
 
     private List<Account> getAllAccounts() throws Exception {
@@ -198,5 +171,38 @@ class DialBankApplicationTests {
         return objectMapper.readValue(JSON, new TypeReference<>() {
         });
     }
+
+	private String getAccountById(Long id) throws Exception {
+		return this.mockMvc.perform(get(ACCOUNT_ENDPOINT_URL + "/account/" + id))
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+	}
+
+	private String addAccount(Account account) throws Exception {
+
+		String JSONToAdd = objectMapper.writeValueAsString(account);
+
+		return this.mockMvc.perform(post(ACCOUNT_ENDPOINT_URL + "/account/add")
+						.header("Content-Type", "application/json")
+						.content(JSONToAdd))
+				.andDo(print())
+				.andExpect(status().is2xxSuccessful())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+	}
+
+	private void deleteAccount(Long id) throws Exception {
+
+		this.mockMvc.perform(delete(ACCOUNT_ENDPOINT_URL + "/account/delete/" + id))
+				.andDo(print())
+				.andExpect(status().is2xxSuccessful())
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+	}
 }
 
