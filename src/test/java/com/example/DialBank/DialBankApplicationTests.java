@@ -1,6 +1,7 @@
 package com.example.DialBank;
 
 import com.example.DialBank.model.Account;
+import com.example.DialBank.repository.AccountRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -14,16 +15,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"mysql"})
+@ActiveProfiles({"test"})
 class DialBankApplicationTests {
 
     private static final String ACCOUNT_ENDPOINT_URL = "/api";
@@ -33,6 +31,8 @@ class DialBankApplicationTests {
 
     @Autowired
     ObjectMapper objectMapper;
+    @Autowired
+    private AccountRepository accountRepository;
 
     @Test
     void contextLoads() {
@@ -129,16 +129,31 @@ class DialBankApplicationTests {
     @DirtiesContext
     public void testDELETE_Success() throws Exception {
         //  Given DB was populated by mysql
-        long existingID = 7;
+        Account tempAccount = new Account(1L, "name1", "name2", 100f, "07463527");
 
-        List<Account> beforeDelete = getAllAccounts();
-        // When
-        this.mockMvc.perform(delete(ACCOUNT_ENDPOINT_URL + "/account/delete/" + existingID))
+        String result = this.mockMvc.perform(post(ACCOUNT_ENDPOINT_URL + "/account/add")
+                        .header("Content-Type", "application/json")
+                        .content(tempAccount.json()))
                 .andDo(print())
-                // Then
-                .andExpect(status().isOk());
-        // Then
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
+        Account account = objectMapper.readValue(result, Account.class);
+        long id = account.getUser_id();
+        List<Account> beforeDelete = getAllAccounts();
+
+        // When
+        this.mockMvc.perform(delete(ACCOUNT_ENDPOINT_URL + "/account/delete/" + id)
+                        .header("Content-Type", "application/json"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // Then
         List<Account> afterDelete = getAllAccounts();
         assertEquals(afterDelete.size(), beforeDelete.size() - 1);
     }
@@ -147,14 +162,29 @@ class DialBankApplicationTests {
 	@DirtiesContext
     public void testDELETE_Failure() throws Exception {
         //  Given DB was populated by mysql
-        long nonExistingID = 1000;
+        Account tempAccount = new Account(5000L, "name1", "name2", 100f, "07463527");
 
-        List<Account> beforeDelete = getAllAccounts();
-        // When
-        this.mockMvc.perform(delete(ACCOUNT_ENDPOINT_URL + "/account/delete/" + nonExistingID))
+        String result = this.mockMvc.perform(post(ACCOUNT_ENDPOINT_URL + "/account/add")
+                        .header("Content-Type", "application/json")
+                        .content(tempAccount.json()))
                 .andDo(print())
-                // Then
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Account account = objectMapper.readValue(result, Account.class);
+        long id = account.getUser_id();
+        List<Account> beforeDelete = getAllAccounts();
+
+        // When
+        this.mockMvc.perform(delete(ACCOUNT_ENDPOINT_URL + "/account/delete/" + id+1)
+                        .header("Content-Type", "application/json"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
         List<Account> afterDelete = getAllAccounts();
         assertEquals(afterDelete.size(), beforeDelete.size());
