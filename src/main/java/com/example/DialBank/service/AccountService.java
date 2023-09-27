@@ -1,5 +1,6 @@
 package com.example.DialBank.service;
 
+import com.example.DialBank.exceptions.AccountAlreadyExistsException;
 import com.example.DialBank.exceptions.AccountNotFoundException;
 import com.example.DialBank.exceptions.InsufficientFundsException;
 import com.example.DialBank.model.Account;
@@ -28,10 +29,14 @@ public class AccountService {
     }
 
     public Account addNewAccount(Account account){
+        if (accountRepository.existsById(account.getUser_id())){
+            throw new AccountAlreadyExistsException("This account already exists!");
+        }
         return accountRepository.save(account);
     }
 
     public Long deleteAccount(Long id){
+        accountRepository.findById(id).orElseThrow(()-> new AccountNotFoundException("Could not find an account #" + id + ". Try a valid ID."));
         accountRepository.deleteById(id);
         return id;
     }
